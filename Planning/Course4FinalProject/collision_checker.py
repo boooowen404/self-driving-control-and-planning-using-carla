@@ -84,6 +84,16 @@ class CollisionChecker:
                 # --------------------------------------------------------------
                 # circle_locations[:, 0] = ... 
                 # circle_locations[:, 1] = ...
+                # print("1")
+                # print(circle_locations)
+                # print("2")
+                # print(path[0][j])
+                # print("3")
+                # print(np.asarray(self._circle_offsets))
+                # print("4")
+                # print(cos(path[2][j]))
+                circle_locations[:, 0] = path[0][j] + np.asarray(self._circle_offsets)*cos(path[2][j])
+                circle_locations[:, 1] = path[1][j] + np.asarray(self._circle_offsets)*sin(path[2][j])
                 # --------------------------------------------------------------
 
                 # Assumes each obstacle is approximated by a collection of
@@ -145,7 +155,7 @@ class CollisionChecker:
                 whether the path is collision-free (true), or not (false). The
                 ith index in the collision_check_array list corresponds to the
                 ith path in the paths list.
-            goal_state: Goal state for the vehicle to reach (centerline goal).
+            goal_state: Goal state for the vehicle to reach (centerline goal) global frame.
                 format: [x_goal, y_goal, v_goal], unit: [m, m, m/s]
         useful variables:
             self._weight: Weight that is multiplied to the best index score.
@@ -155,6 +165,9 @@ class CollisionChecker:
         """
         best_index = None
         best_score = float('Inf')
+
+        # print("print_LOG: paths size = "+str(len(paths)))
+        
         for i in range(len(paths)):
             # Handle the case of collision-free paths.
             if collision_check_array[i]:
@@ -165,6 +178,14 @@ class CollisionChecker:
                 # TODO: INSERT YOUR CODE BETWEEN THE DASHED LINES
                 # --------------------------------------------------------------
                 # score = ...
+                # 这里取所有的路径点到目标点的距离的和作为分数
+                score = 0
+                path = paths[i]
+                goal_points_x = np.linspace(path[0][0], goal_state[0],len(path[0]))
+                goal_points_y = np.linspace(path[1][0], goal_state[1],len(path[0]))
+                for k in range(len(path)):
+                    score += (path[0][k]-goal_points_x[k])*(path[0][k]-goal_points_x[k])+(path[1][k]-goal_points_y[k])*(path[1][k]-goal_points_y[k])
+                score += 100.0*((path[0][-1]-goal_state[0])*(path[0][-1]-goal_state[0])+(path[1][-1]-goal_state[1])*(path[1][-1]-goal_state[1]))
                 # --------------------------------------------------------------
 
                 # Compute the "proximity to other colliding paths" score and
@@ -179,7 +200,6 @@ class CollisionChecker:
                             # --------------------------------------------------
                             # score += self._weight * ...
                             # --------------------------------------------------
-
                             pass
 
             # Handle the case of colliding paths.
