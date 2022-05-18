@@ -31,6 +31,8 @@ class VelocityPlanner:
             return self._prev_trajectory[0][2]
 
         for i in range(len(self._prev_trajectory)-1):
+            #两数组对应元素相减，返回数组，输入是元素是返回元素
+            #python中[]左闭右开
             distance_step = np.linalg.norm(np.subtract(self._prev_trajectory[i+1][0:2], 
                                                        self._prev_trajectory[i][0:2]))
             velocity = self._prev_trajectory[i][2]
@@ -499,6 +501,8 @@ def calc_distance(v_i, v_f, a):
     # ------------------------------------------------------------------
     # d = ...
     # return d
+    d = (pow(v_f,2) - pow(v_i,2)) / (2 * a)
+    return d
     # ------------------------------------------------------------------
 
 ######################################################
@@ -530,5 +534,11 @@ def calc_final_speed(v_i, a, d):
     # ------------------------------------------------------------------
     # v_f = ...
     # return v_f
+    temp_v = pow(v_i,2) + 2*a*d
+    if temp_v<=0:
+        v_f = 0
+    else:
+        v_f = sqrt(pow(v_i,2) + 2*a*d)
+    return v_f
     # ------------------------------------------------------------------
 

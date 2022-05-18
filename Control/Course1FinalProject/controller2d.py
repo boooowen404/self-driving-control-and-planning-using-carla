@@ -77,6 +77,18 @@ class Controller2D(object):
         brake           = np.fmax(np.fmin(input_brake, 1.0), 0.0)
         self._set_brake = brake
 
+    def get_dis(self,x1,y1,x2,y2,x0,y0):
+        A = y2-y1
+        B = x1-x2
+        C = x2*y1-x1*y2
+        dis = np.abs(A*x0 + B*y0+C)/np.sqrt(A*A+B*B)
+        if x0>x1 and y2<y1:
+            dis = -dis
+        elif x0<x1 and y2>y1:
+            dis = -dis
+        return dis
+
+
     def update_controls(self):
         ######################################################
         # RETRIEVE SIMULATOR FEEDBACK
@@ -114,6 +126,9 @@ class Controller2D(object):
             throttle_output = 0.5 * self.vars.v_previous
         """
         self.vars.create_var('v_previous', 0.0)
+        self.vars.create_var('v_desired_previous', 0.0)
+        self.vars.create_var('Kp', 0.8)
+        self.vars.create_var('Kd', 0.05)
 
         # Skip the first frame to store previous values properly
         if self._start_control_loop:
@@ -159,12 +174,30 @@ class Controller2D(object):
                 access the persistent variables declared above here. For
                 example, can treat self.vars.v_previous like a "global variable".
             """
+            # 构建一个PID控制器，控制纵向速度
+            # 期望速度与实际速度的差值
+            u = self._desired_speed - self._current_speed
+            u_previous = self.vars.v_desired_previous - self.vars.v_previous
+            u_diff = u - u_previous
+            output = u*self.vars.Kp+u_diff*self.vars.Kd
+
+            self.vars.v_previous = self._current_speed
+            self.vars.v_desired_previous = self._desired_speed
+
             
+
             # Change these outputs with the longitudinal controller. Note that
             # brake_output is optional and is not required to pass the
             # assignment, as the car will naturally slow down over time.
-            throttle_output = 0
-            brake_output    = 0
+            if output>0:
+                throttle_output = output
+                brake_output = 0
+            else:
+                throttle_output = 0
+                brake_output    = output
+
+            # print("throttle_output = "+str(throttle_output))
+            # print("brake_output = "+str(brake_output))
 
             ######################################################
             ######################################################
@@ -176,10 +209,62 @@ class Controller2D(object):
                 access the persistent variables declared above here. For
                 example, can treat self.vars.v_previous like a "global variable".
             """
-            
-            # Change the steer output with the lateral controller. 
-            steer_output    = 0
+            # 使用Stanley控制获得steer angle
+            # 找到距离最近点的向前切线的距离e，角度theta
+            min_idx       = 0
+            min_dist      = float("inf")
+            sec_idx       = 0
+            e = 0
+            Ks = 10
+            for i in range(len(self._waypoints)):
+                dist = np.linalg.norm(np.array([
+                        self._waypoints[i][0] - self._current_x,
+                        self._waypoints[i][1] - self._current_y]))
+                if dist < min_dist:
+                    min_dist = dist
+                    min_idx = i
+            if min_idx < len(self._waypoints)-1:
+                sec_idx = min_idx+1
+            else:
+                sec_idx = min_idx-1
+            x1 = self._waypoints[min_idx][0]
+            x2 = self._waypoints[sec_idx][0]
+            y1 = self._waypoints[min_idx][1]
+            y2 = self._waypoints[sec_idx][1]
+            x0 = self._current_x
+            y0 = self._current_y
+            theta = np.arctan((y2-y1)/(x2-x1))
+            # if y2-y1<0 and x2-x1<0:
+            #     theta = -theta
+            # elif y2-y1>0 and x2-x1>0:
+            #     theta = -theta
+            # elif y2-y1<0 and x2-x1>0:
+            #     theta = -theta-self._pi
+            # elif y2-y1>0 and x2-x1<0:
+            #     theta = -theta+self._pi
+            # else:
+            #     theta = -theta
+            if x2-x1<0 and y2-y1<0:
+                theta = theta - self._pi
+            elif y2-y1>0 and x2-x1<0:
+                theta = theta + self._pi
 
+            e = self.get_dis(x1,y1,x2,y2,x0,y0)
+            steer_res = -self._current_yaw + theta + np.arctan(e/(Ks+self._current_speed))
+            #范围限制 避免从0到pi的突变
+            if steer_res>self._pi:
+                steer_res = self._pi - steer_res
+            
+            
+
+            # print("steer_res = "+ str(steer_res))
+            print("self._current_yaw = "+ str(self._current_yaw*180/self._pi))
+            print("theta = "+ str(theta*180/self._pi))
+            #print("x = "+ str(x1)+" "+str(y1)+" "+ str(x2)+" "+ str(y2)+" "+ str(x0)+ " "+str(y0))
+            print("steer_res = "+ str(steer_res))
+            print("e = "+ str(np.arctan(e/(Ks+self._current_speed))))
+            # Change the steer output with the lateral controller. 
+            steer_output    = steer_res
             ######################################################
             # SET CONTROLS OUTPUT
             ######################################################
