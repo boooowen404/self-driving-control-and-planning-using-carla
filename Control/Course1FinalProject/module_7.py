@@ -264,6 +264,8 @@ def exec_waypoint_nav_demo(args):
         # live_plotting and live_plotting_period, which controls whether
         # live plotting is enabled or how often the live plotter updates
         # during the simulation run.
+        # 配置文件解析器，具有固定的格式
+        # https://docs.python.org/zh-cn/3.7/library/configparser.html
         config = configparser.ConfigParser()
         config.read(os.path.join(
                 os.path.dirname(os.path.realpath(__file__)), 'options.cfg'))         
@@ -681,6 +683,7 @@ def main():
         -i, --images-to-disk: save images to disk
         -c, --carla-settings: Path to CarlaSettings.ini file
     """
+    # 用于解析command-line options, arguments and sub-commands
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument(
         '-v', '--verbose',
