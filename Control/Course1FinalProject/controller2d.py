@@ -174,7 +174,7 @@ class Controller2D(object):
                 access the persistent variables declared above here. For
                 example, can treat self.vars.v_previous like a "global variable".
             """
-            # 构建一个PID控制器，控制纵向速度
+            # 构建一个PD控制器，控制纵向速度
             # 期望速度与实际速度的差值
             u = self._desired_speed - self._current_speed
             u_previous = self.vars.v_desired_previous - self.vars.v_previous
