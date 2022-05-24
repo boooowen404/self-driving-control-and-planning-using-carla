@@ -233,16 +233,7 @@ class Controller2D(object):
             x0 = self._current_x
             y0 = self._current_y
             theta = np.arctan((y2-y1)/(x2-x1))
-            # if y2-y1<0 and x2-x1<0:
-            #     theta = -theta
-            # elif y2-y1>0 and x2-x1>0:
-            #     theta = -theta
-            # elif y2-y1<0 and x2-x1>0:
-            #     theta = -theta-self._pi
-            # elif y2-y1>0 and x2-x1<0:
-            #     theta = -theta+self._pi
-            # else:
-            #     theta = -theta
+
             if x2-x1<0 and y2-y1<0:
                 theta = theta - self._pi
             elif y2-y1>0 and x2-x1<0:
