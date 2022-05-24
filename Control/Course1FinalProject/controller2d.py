@@ -129,6 +129,8 @@ class Controller2D(object):
         self.vars.create_var('v_desired_previous', 0.0)
         self.vars.create_var('Kp', 0.8)
         self.vars.create_var('Kd', 0.05)
+        self.vars.create_var('Ki', 0.01)
+        self.vars.create_var('u_integral', 0.0)
 
         # Skip the first frame to store previous values properly
         if self._start_control_loop:
@@ -177,14 +179,11 @@ class Controller2D(object):
             # 构建一个PD控制器，控制纵向速度
             # 期望速度与实际速度的差值
             u = self._desired_speed - self._current_speed
-            u_previous = self.vars.v_desired_previous - self.vars.v_previous
-            u_diff = u - u_previous
-            output = u*self.vars.Kp+u_diff*self.vars.Kd
+            u_diff = -(self._current_speed - self.vars.v_previous)
+            self.vars.u_integral = self.vars.u_integral + u*
+            output = u*self.vars.Kp+u_diff*self.vars.Kd + u_integral*self.vars.Ki
 
             self.vars.v_previous = self._current_speed
-            self.vars.v_desired_previous = self._desired_speed
-
-            
 
             # Change these outputs with the longitudinal controller. Note that
             # brake_output is optional and is not required to pass the
